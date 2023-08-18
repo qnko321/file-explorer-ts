@@ -1,0 +1,324 @@
+$header-height: 60px;
+$footer-height: 15px;
+$explorer-width: 30%;
+
+$background-color: #141719;
+$background-secondary-color: #46494b;
+$accent-color: #21b66a;
+$primary-color: #206b46;
+$text-color: #f6f9fb;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  user-select: none;
+
+  &::-webkit-scrollbar {
+    background-color: $background-color;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: $background-secondary-color;
+    border-radius: 30px;
+  }
+
+  &::selection {
+    background-color: $accent-color;
+  }
+}
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: $background-color;
+}
+
+#header {
+  width: 100vw;
+  height: $header-height;
+  display: flex;
+  flex-direction: column;
+
+  .top-menu {
+    width: 100vw;
+    height: 17px;
+    margin-bottom: auto;
+    display: inline;
+
+    .top-menu-button {
+      background-color: $background-color;
+      padding: 3px 5px;
+      max-height: 17px;
+      width: fit-content;
+      cursor: pointer;
+
+      .title {
+        line-height: 11px;
+        font-size: 14px;
+        color: $text-color;
+      }
+    }
+  }
+
+  .navigator {
+    width: $explorer-width;
+    height: 30px;
+    margin-top: auto;
+    display: flex;
+    
+    .controls {
+      display: flex;
+      margin-right: 10px;
+      margin-left: auto;
+
+      .seperator {
+        width: 10px;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+}
+
+#center {
+  width: 100vw;
+  height: calc(100vh - $header-height - $footer-height);
+  display: flex;
+
+  
+  .explorer {
+    width: calc($explorer-width - 10px);
+    margin-left: 10px;
+    height: 100%;
+    color: $text-color;
+    overflow-y: scroll;
+
+    .entries {
+      margin-right: 10px;
+    }
+    
+    .entry {
+      cursor: pointer;
+      margin-bottom: 4px;
+      margin-top: 4px;
+      line-height: 18px;
+      display: flex;
+      flex-direction: column;
+
+      .self {
+        display: flex;
+        flex-direction: row;
+        max-height: 18px;
+        border-radius: 5px;
+      
+        .expand-button {
+          width: 15px;
+          height: 16px;
+
+          &:hover {
+            background-color: $accent-color;
+            border-radius: 100%;
+          }
+
+          .expand-button-icon {
+            width: 12px;
+            height: 12px;
+            margin: auto;
+          }
+        }
+        
+        .name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          user-select: text;
+          width: 100%;
+        }
+      }
+
+      .children {
+         display: flex;
+         flex-direction: column;
+         margin-left: 20px;
+      }
+    }
+  }
+
+  .directory-window {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .tabs-container {
+      width: 100%;
+      height: 30px;
+      display: flex;
+      
+      .tab {
+        max-width: 160px;color: $text-color;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+
+        img {
+          width: 18px;
+          height: 30px;
+        }
+
+        .title {
+          background-color: $primary-color;
+          height: 30px;
+          line-height: 30px;
+          text-align: center;
+          margin-top: auto;
+          margin-bottom: auto;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: normal;
+        }
+
+        .selected {
+          background-color: $accent-color;
+        }
+      }
+    }
+
+    .under-tabs-controls {
+      display: flex;
+      width: 100%;
+
+      .current-path-display {
+        width: 65%;
+        height: 25px;
+        border: $background-secondary-color 2px solid;
+        border-radius: 5px;
+
+        h4 {
+          color: $text-color;
+          line-height: 21px;
+          padding-left: 5px;
+          user-select: text;
+        }
+      }
+
+      .search-box {
+        width: 30%;
+        height: 25px;
+        margin-top: auto;
+        margin-left: auto;
+        margin-right: auto;
+
+        input {
+          width: 100%;
+          height: 25px;
+          line-height: 25px;
+          font-size: 16px;
+          outline: none;
+          border: none;
+          background-color: $background-secondary-color;
+          color: $text-color;
+          
+          &:focus {
+            outline: none;
+            border: none;
+            border: 2px solid grey;
+          }
+
+          &::selection {
+            background-color: $accent-color;
+          }
+        }
+      }
+    }
+
+    .entries-container {
+      height: fit-content;
+      width: 100%;
+      overflow-y: scroll;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+
+      .selected {
+        border: 2px $accent-color dashed;
+      }
+
+      .entry {
+        width: 100px;
+        height: 100px;
+        margin: 10px;
+        display: flex;
+        flex-direction: column;
+        padding: 5px;
+        
+        img {
+          width: 70px;
+          height: 70px;
+          margin-top: auto;
+          margin-left: auto;
+          margin-right: auto;
+          pointer-events: none;
+        }
+
+        .name {
+          width: 100%;
+          margin-top: auto;
+          margin-bottom: auto;
+          text-align: center;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: $text-color;
+        }
+
+        .name-input {
+          align-self: center;
+          width: calc(90% + 2px);
+          height: 20px;
+          outline: none;
+          border: none;
+          border-radius: 5px;
+          border: $background-color 2px solid;
+
+          &:focus {
+            outline: none;
+            border: $accent-color 2px solid;
+            border-radius: 5px;
+            width: calc(90%);
+          }
+        }
+      }
+    }
+  }
+}
+
+#footer {
+  width: 100vw;
+  height: $footer-height;
+}
+
+.context-menu {
+  position: absolute;
+  border: $primary-color 2px solid;
+
+  ul {
+    list-style: none;
+    background-color: $background-color;
+
+    li {
+      color: $text-color;
+      padding: 3px;
+
+      &:hover {
+        background-color: $accent-color;
+      }
+    }
+  }
+}

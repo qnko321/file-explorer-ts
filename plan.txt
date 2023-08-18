@@ -1,0 +1,5 @@
+What should the tab data class be able to do:
+
+navigate backward
+navigate forward
+after change of path update for the new path
