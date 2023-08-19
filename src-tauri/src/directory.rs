@@ -16,6 +16,12 @@ pub(crate) struct Entry {
     path: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct DeleteEntry {
+    is_dir: bool,
+    path: String,
+}
+
 #[tauri::command]
 pub(crate) fn expand_directory(path: String) -> Result<Vec<Directory>, String> {
     let mut directories = vec![];
@@ -88,7 +94,7 @@ pub(crate) fn create_new_folder(path: &str, name: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub(crate) fn delete_entries(entries: Vec<Entry>) -> Result<(), String> {
+pub(crate) fn delete_entries(entries: Vec<DeleteEntry>) -> Result<(), String> {
     for entry in entries {
         let path = entry.path;
         if !path.starts_with("F:\\testdeleting") {

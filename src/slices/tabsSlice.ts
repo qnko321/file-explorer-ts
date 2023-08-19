@@ -1,31 +1,36 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import TabData from '../components/Center/DirectoryWindow/TabData';
-import TabObject from '../components/Center/DirectoryWindow/TabObject';
+import TabObject from '../intefaces/TabObject';
 
 interface TabsState {
     currentTabIndex: number,
     data: TabObject[]
 };
 
+type ClosePayload = number;
+
 type CreatePayload = {
     path: string | undefined,
 }
 
-type OpenPayload ={
+type OpenPayload = {
     path: string | undefined,
     newTab: boolean,
 }
 
-type SelectTabPayload ={
+type SelectTabPayload = {
     index: number,
 }
 
-type SearchPayload ={
+type SearchPayload = {
     searchFor: string,
 }
 
-type ClosePayload = number;
-type SelectEntryPayload = number;
+type SelectEntryPayload = {
+    index: number,
+    path: string,
+    isDir: boolean,
+};
 
 export const tabSlice = createSlice({
     name: 'tabs',
@@ -74,10 +79,14 @@ export const tabSlice = createSlice({
             state.currentTabIndex = action.payload.index;
         },
         selectEntry: (state, action: PayloadAction<SelectEntryPayload>) => {
-            if (state.data[state.currentTabIndex].selectedEntries.includes(action.payload)) {
-                state.data[state.currentTabIndex].selectedEntries = state.data[state.currentTabIndex].selectedEntries.filter((entryIndex, _) => entryIndex !== action.payload);
+            if (state.data[state.currentTabIndex].selectedEntries.some(entry => entry.index === action.payload.index && entry.path === action.payload.path)) {
+                state.data[state.currentTabIndex].selectedEntries = state.data[state.currentTabIndex].selectedEntries.filter((entry, _) => entry.index !== action.payload.index);
             } else {
-                state.data[state.currentTabIndex].selectedEntries.push(action.payload);
+                state.data[state.currentTabIndex].selectedEntries.push({
+                    index: action.payload.index,
+                    path: action.payload.path,
+                    isDir: action.payload.isDir,
+                } as SelectedEntry);
             }
         },
         navigateBack: (state) => {

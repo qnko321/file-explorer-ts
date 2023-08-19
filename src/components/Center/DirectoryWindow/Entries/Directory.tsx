@@ -16,8 +16,9 @@ const  Directory: React.FC<DirectoryProps> = ({name, path, openContextMenu, inde
         <div 
             className={"directory entry" + (isSelected ? " selected" : "")}
             onDoubleClick={() => dispatch(open({path, newTab: false}))}
-            onClick={() => dispatch(selectEntry(index))}
-            onContextMenu={(e) => openContextMenu(e, path)}>
+            onClick={() => dispatch(selectEntry({index, path, isDir: true}))}
+            onContextMenu={(e) => openContextMenu(e, path)}
+        >
             <img src="./folder.svg"/>
             <h5 title={name} className="name">{name}</h5>
         </div>

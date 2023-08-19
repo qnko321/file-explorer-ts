@@ -1,36 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import TabData from "./TabData";
 import { Entry } from "../../../intefaces/Entry";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api";
 import { close, open } from "../../../slices/tabsSlice";
-import { emit, listen } from "@tauri-apps/api/event";
+import { emit, listen, Event } from "@tauri-apps/api/event";
+import CloseContextMenuEventPayload from "../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
 
 type EntriesChache = {
     [path: string]: Entry[]
 }
 
 const useDirectoryWindow = () => {
-    const dispatch = useDispatch();
-
     const [entriesCache, setEntriesCache] = useState<EntriesChache>({});
-    const [displayTabContextMenu, setDisplayTabContextMenu] = useState<boolean>(false);
-    const [tabContextMenuData, setTabContextMenuData] = useState<{x: string, y: string, index: number}>({
-        x: "0px",
-        y: "0px",
-        index: -1,
-    });
-    const [displayFolderContextMenu, setDisplayFolderContextMenu] = useState<boolean>(false);
-    const [folderContextMenuData, setFolderContextMenuData] = useState<{x: string, y: string, path: string}>({
-        x: "0px",
-        y: "0px",
-        path: "",
-    });
-    const [displayDirectoryWindowContextMenu, setDisplayDirectoryWindowContextMenu] = useState<boolean>(false);
-    const [directoryWindowContextMenuData, setDirectoryWindowContextMenuData] = useState<{x: string, y: string}>({
-        x: "0px",
-        y: "0px",
-    });
 
     const [isCreatingNewFolder, setIsCreatingNewFolder] = useState<boolean>(false);
     const [isCreatingNewFile, setIsCreatingNewFile] = useState<boolean>(false);
@@ -43,21 +25,44 @@ const useDirectoryWindow = () => {
         data: TabData[]
     }}) => state.tabs);
 
+    const tabsRef = useRef(tabs);
+
+    const currentPath = tabsRef.current.currentTabIndex > -1 ? tabsRef.current.data[tabsRef.current.currentTabIndex].path : "";
+
     useEffect(() => {
-        const unlisten_close_context_menu = listen('close-context-menu', (event) => {
-            if (event.payload.menu !== 'tab') {
-                closeTabContextMenu();
+        tabsRef.current = tabs;
+    }, [tabs]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: any) => {
+            if (event.key === 'Delete') {
+                const selectedEntries = tabsRef.current.data[tabsRef.current.currentTabIndex].selectedEntries;
+                const toDelete = selectedEntries.map((entry, _) => {
+                    return {
+                        is_dir: entry.isDir,
+                        path: entry.path,
+                    };
+                });
+                invoke("delete_entries", {
+                    entries: toDelete,
+                }).then(_ => {
+                    const currentPath = tabsRef.current.data[tabsRef.current.currentTabIndex].path;
+                    invoke("get_directory_content", {path: currentPath}).then(entries => {
+                        setEntriesCache(prevState => ({
+                            ...prevState,
+                            [currentPath]: entries as Entry[],
+                        }))
+                    });
+                }). catch(error => {
+                    console.error(error);
+                });
             }
-            if (event.payload.menu !== 'folder') {
-                closeFolderContextMenu();
-            }
-            if (event.payload.menu !== 'directory-window') {
-                closeDirectoryWindowContextMenu();
-            }
-        });
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            unlisten_close_context_menu.then(f => f());
+            document.removeEventListener('keydown', handleKeyDown);
         }
     }, []);
 
@@ -92,19 +97,6 @@ const useDirectoryWindow = () => {
         return [];
     }
 
-    const closeTab = () => {
-        dispatch(close(tabContextMenuData.index));
-        closeTabContextMenu();
-    }
-
-    const openDirectoryInNewTab = () => {
-        dispatch(open({
-            path: folderContextMenuData.path,
-            newTab: true,
-        }));
-        closeFolderContextMenu();
-    }
-
     const searchForInEntries = (path: string, searchFor: string): Entry[] => {
         const entries = getEntries(path);
         const searchForLowered = searchFor.toLowerCase();
@@ -117,61 +109,28 @@ const useDirectoryWindow = () => {
         const filteredResults = results.filter((value, index, self) => self.indexOf(value) === index);
         return filteredResults;
     }
-
-    const openFolderContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, path: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        emit('close-context-menu', {
-            menu: 'folder',
-        });
-
-        setDisplayFolderContextMenu(true);
-        setFolderContextMenuData({
-            x: `${e.pageX}`,
-            y: `${e.pageY}`,
-            path,
-        });
-    }
-
-    const closeFolderContextMenu = () => {
-        setDisplayFolderContextMenu(false);
-    }
-
-    const openDirectoryWindowContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        emit('close-context-menu', {
-            menu: 'directory-window',
-        });
-
-        setDisplayDirectoryWindowContextMenu(true);
-        setDirectoryWindowContextMenuData({
-            x: `${e.pageX}`,
-            y: `${e.pageY}`,
+    
+    const createNewFile = (name: string) => {
+        const currentPath = tabs.data[tabs.currentTabIndex].path;
+        invoke('create_new_file', {
+            name: name,
+            path: currentPath,
         })
-    }
-
-    const closeDirectoryWindowContextMenu = () => {
-        setDisplayDirectoryWindowContextMenu(false);
-    }
-
-    const openTabContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
-        e.preventDefault();
-        e.stopPropagation();
-        emit('close-context-menu', {
-            menu: 'tab',
-        });
-
-        setDisplayTabContextMenu(true);
-        setTabContextMenuData({
-            x: `${e.pageX}`,
-            y: `${e.pageY}`,
-            index,
+        .then(_ => {
+            console.log("Successfully created new folder!")
+            invoke("get_directory_content", {path: currentPath}).then(entries => {
+                setEntriesCache(prevState => ({
+                    ...prevState,
+                    [currentPath]: entries as Entry[],
+                }))
+            });
         })
+        .catch(error => emit('show-error', {error}));
+        setIsCreatingNewFile(false);
     }
 
-    const closeTabContextMenu = () => {
-        setDisplayTabContextMenu(false);
+    const handleNewFileClick = () => {
+        setIsCreatingNewFile(true);
     }
 
     const createNewFolder = (name: string) => {
@@ -187,7 +146,7 @@ const useDirectoryWindow = () => {
                     ...prevState,
                     [currentPath]: entries as Entry[],
                 }))
-            })
+            });
         })
         .catch(error => emit('show-error', {error}));
         setIsCreatingNewFolder(false);
@@ -204,21 +163,14 @@ const useDirectoryWindow = () => {
 
     return {
         tabs,
+        currentPath,
         searchForInEntries,
-        openTabContextMenu,
-        displayTabContextMenu,
-        tabContextMenuData,
-        closeTab,
-        openFolderContextMenu,
-        displayFolderContextMenu,
-        folderContextMenuData,
-        openDirectoryInNewTab,
-        openDirectoryWindowContextMenu,
-        directoryWindowContextMenuData,
-        displayDirectoryWindowContextMenu,
         createNewFolder,
+        createNewFile,
         handleNewFolderClick,
         isCreatingNewFolder,
+        handleNewFileClick,
+        isCreatingNewFile,
         openPowerShell,
     };
 }

@@ -67,15 +67,15 @@ $text-color: #f6f9fb;
   }
 
   .navigator {
-    width: $explorer-width;
+    width: 23%;
     height: 30px;
     margin-top: auto;
     display: flex;
     
     .controls {
-      display: flex;
-      margin-right: 10px;
       margin-left: auto;
+      margin-right: 10px;
+      display: flex;
 
       .seperator {
         width: 10px;
@@ -84,6 +84,12 @@ $text-color: #f6f9fb;
       img {
         width: 100%;
         height: 100%;
+        padding: 5%;
+
+        &:hover {
+          background-color: $background-secondary-color;
+          border-radius: 100%;
+        }
       }
     }
   }
@@ -125,7 +131,7 @@ $text-color: #f6f9fb;
           height: 16px;
 
           &:hover {
-            background-color: $accent-color;
+            background-color: $background-secondary-color;
             border-radius: 100%;
           }
 
@@ -318,6 +324,12 @@ $text-color: #f6f9fb;
 
       &:hover {
         background-color: $accent-color;
+      }
+    }
+
+    .not-hoverable {
+      &:hover {
+        background-color: $background-color;
       }
     }
   }

@@ -12,12 +12,12 @@ interface FileProps {
 const File: React.FC<FileProps> = ({name, path, index, isSelected}) => {
     const dispatch = useDispatch();
 
-    const handleOpenFile = (e) => {
+    const handleOpenFile = () => {
         invoke("open_file", {path});
     }
 
     return (
-        <div className={"file entry" + (isSelected ? " selected" : "")} onDoubleClick={handleOpenFile} onClick={() => dispatch(selectEntry(index))}>
+        <div className={"file entry" + (isSelected ? " selected" : "")} onDoubleClick={handleOpenFile} onClick={() => dispatch(selectEntry({index, path, isDir: false}))}>
             <img src="./file.svg"/>
             <h5 title={name} className="name">{name}</h5>
         </div>

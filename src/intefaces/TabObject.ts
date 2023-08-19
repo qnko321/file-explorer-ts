@@ -1,7 +1,7 @@
 interface TabObject {
     path: string;
     title: string;
-    selectedEntries: number[];
+    selectedEntries: SelectedEntry[];
     searchFor: string;
     history: string[];
     historyCursor: number;

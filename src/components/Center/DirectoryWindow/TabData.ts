@@ -1,14 +1,14 @@
-import TabObject from "./TabObject";
+import TabObject from "../../../intefaces/TabObject";
 
 class TabData {
     path: string;
     title: string;
-    selectedEntries: number[];
+    selectedEntries: SelectedEntry[];
     searchFor: string;
     history: string[];
     historyCursor: number;
 
-	/// Provide a valid path in the file system or undefined to list the drives
+	/// Provide a valid path in the file system or (undefined or "drives") to list the drives
     constructor(path: string | undefined) {
         if (path === "drives" || path === undefined) {
 			path = "drives"
@@ -42,6 +42,7 @@ class TabData {
             this.historyCursor = this.history.length - 1;
         }
         
+        this.selectedEntries = [];
 		this.path = newPath;
         this.title = getTitleFromPath(this.path);
     }
