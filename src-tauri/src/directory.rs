@@ -22,6 +22,12 @@ pub(crate) struct DeleteEntry {
     path: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct SelectedEntry {
+    pub(crate) is_dir: bool,
+    pub(crate) path: String,
+}
+
 #[tauri::command]
 pub(crate) fn expand_directory(path: String) -> Result<Vec<Directory>, String> {
     let mut directories = vec![];

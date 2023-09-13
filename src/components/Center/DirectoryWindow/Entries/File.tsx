@@ -5,11 +5,12 @@ import { useDispatch } from "react-redux";
 interface FileProps {
     name: string,
     path: string,
+    openContextMenu: (e: React.MouseEvent<HTMLDivElement, MouseEvent>, path: string, name: string) => void,
     index: number,
     isSelected: boolean,
 }
 
-const File: React.FC<FileProps> = ({name, path, index, isSelected}) => {
+const File: React.FC<FileProps> = ({name, path, openContextMenu, index, isSelected}) => {
     const dispatch = useDispatch();
 
     const handleOpenFile = () => {
@@ -17,7 +18,12 @@ const File: React.FC<FileProps> = ({name, path, index, isSelected}) => {
     }
 
     return (
-        <div className={"file entry" + (isSelected ? " selected" : "")} onDoubleClick={handleOpenFile} onClick={() => dispatch(selectEntry({index, path, isDir: false}))}>
+        <div 
+            className={"file entry" + (isSelected ? " selected" : "")} 
+            onDoubleClick={handleOpenFile} 
+            onClick={() => dispatch(selectEntry({index, path, isDir: false}))}
+            onContextMenu={(e) => {openContextMenu(e, path, name)}}
+        >
             <img src="./file.svg"/>
             <h5 title={name} className="name">{name}</h5>
         </div>

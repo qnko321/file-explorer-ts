@@ -48,10 +48,11 @@ export const tabSlice = createSlice({
             if (state.data.length - 1 < action.payload) { 
                 return;
             }
-            state.data = state.data.filter((_, index) => index !== action.payload);
             if (state.currentTabIndex === action.payload) {
                 state.currentTabIndex = state.data.length - 1;
             }
+            state.data = state.data.filter((_, index) => index !== action.payload);
+            
         },
         open: (state, action: PayloadAction<OpenPayload>) => {
             if (action.payload.newTab) {

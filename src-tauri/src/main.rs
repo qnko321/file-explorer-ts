@@ -1,12 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[macro_use]
-extern crate lazy_static;
-
 mod directory;
 mod drives;
 mod file;
+mod logger;
+mod network_file_transfer;
 
 use crate::directory::__cmd__create_new_folder;
 use crate::directory::__cmd__delete_entries;
@@ -22,80 +21,31 @@ use crate::file::__cmd__create_new_file;
 use crate::file::__cmd__open_file;
 use crate::file::create_new_file;
 use crate::file::open_file;
+use crate::network_file_transfer::client::__cmd__connect;
+use crate::network_file_transfer::client::connect;
+use crate::network_file_transfer::client::__cmd__is_connected;
+use crate::network_file_transfer::client::is_connected;
 use fslock::LockFile;
-use notify::EventKind;
-use notify::Watcher;
-use serde::Deserialize;
-use serde::Serialize;
-use winapi::um::shellapi::ShellExecuteA;
-use std::collections::HashMap;
+use logger::setup_logger;
+use network_file_transfer::file_transfer::__cmd__send_file;
+use network_file_transfer::file_transfer::send_file;
+use network_file_transfer::file_transfer::__cmd__send_folder;
+use network_file_transfer::file_transfer::send_folder;
+use network_file_transfer::file_transfer::__cmd__send_folder_all;
+use network_file_transfer::file_transfer::send_folder_all;
+use network_file_transfer::file_transfer::__cmd__transfer_selected;
+use network_file_transfer::file_transfer::transfer_selected;
 use std::process::Command;
 use std::net::UdpSocket;
-use std::path::Path;
 use std::process::Stdio;
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::Once;
 use tauri::CustomMenuItem;
 use tauri::Manager;
 use tauri::SystemTrayEvent;
 use tauri::SystemTrayMenu;
 use tauri::SystemTrayMenuItem;
-use walkdir::DirEntry;
-use winapi::um::shellapi::ShellExecuteW;
-use winapi::um::winuser::SW_SHOWNORMAL;
-
-const FILE_MAP_NAME: &str = "file-explorer-file-map";
-
-#[derive(Serialize, Deserialize, Debug)]
-struct FileMap {
-    map: HashMap<String, String>,
-}
-
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with("."))
-        .unwrap_or(false)
-}
-
-lazy_static! {
-    static ref FILE_MAP: Arc<Mutex<HashMap<String, String>>> =
-        Arc::new(Mutex::new(HashMap::<String, String>::new()));
-}
 
 fn main() {
-    // let mut watcher =
-    //     notify::recommended_watcher(|res: Result<notify::Event, notify::Error>| match res {
-    //         Ok(event) => match event.kind {
-    //             EventKind::Create(_) => println!("Create {:?}", event.paths),
-    //             EventKind::Remove(_) => println!("Remove {:?}", event.paths),
-    //             EventKind::Other => println!("Other: {:?}", event),
-    //             _ => {}
-    //         },
-    //         Err(e) => println!("watch error: {:?}", e),
-    //     })
-    //     .unwrap();
-
-    // watcher
-    //     .watch(Path::new("/"), notify::RecursiveMode::Recursive)
-    //     .unwrap();
-
-    // let serialized = serde_json::to_string(&map).unwrap();
-
-    // let path_str = &format!("{}{}", std::env::temp_dir().to_str().unwrap(), FILE_MAP_NAME);
-    // let path = Path::new(path_str);
-
-    // let exists = Path::try_exists(path).unwrap();
-
-    // if exists {
-    //     println!("exists");
-    // } else {
-    //     let mut file = File::create(path).unwrap();
-    //     file.write_all(serialized.as_bytes()).unwrap();
-    // }
-
     let binding = std::env::current_exe().unwrap();
     let exe_parrent_path = binding.parent().unwrap().to_str().unwrap();
     let mut lockfile = LockFile::open(&format!("{}\\DONT_DELETE", exe_parrent_path)).unwrap();
@@ -109,13 +59,15 @@ fn main() {
         _ => {}
     }
 
+    setup_logger().expect("Failed to start logger");
+
     let start_udp_listener = Once::new();
 
     let system_tray = create_system_tray();
 
     tauri::Builder::default()
         .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
+        .on_system_tray_event(|app: &tauri::AppHandle, event| match event {
             SystemTrayEvent::DoubleClick {
                 position: _,
                 size: _,
@@ -153,6 +105,12 @@ fn main() {
             delete_entries,
             create_new_file,
             open_powershell,
+            connect,
+            send_file,
+            send_folder,
+            send_folder_all,
+            is_connected,
+            transfer_selected,
         ])
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {

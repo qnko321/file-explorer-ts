@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { open } from "../../../../../slices/tabsSlice";
 import { useDispatch } from "react-redux";
 import CloseContextMenuEventPayload from "../../../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
+import { invoke } from "@tauri-apps/api";
 
 const useFolderContextMenu = () => {
     const dispatch = useDispatch();
@@ -53,16 +54,19 @@ const useFolderContextMenu = () => {
         setDisplayFolderContextMenu(false);
     }
 
+    const transferFolder = () => {
+        invoke("send_folder_all", {
+            path: folderContextMenuData.path,
+        });
+    }
+
     return {
         displayFolderContextMenu,
         folderContextMenuData,
         openDirectoryInNewTab,
-        openFolderContextMenu
+        openFolderContextMenu,
+        transferFolder,
     };
 }
 
 export default useFolderContextMenu;
-
-function dispatch(arg0: Window | null) {
-    throw new Error("Function not implemented.");
-}

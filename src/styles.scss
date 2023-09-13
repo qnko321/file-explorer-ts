@@ -49,7 +49,7 @@ $text-color: #f6f9fb;
     width: 100vw;
     height: 17px;
     margin-bottom: auto;
-    display: inline;
+    display: flex;
 
     .top-menu-button {
       background-color: $background-color;
@@ -62,6 +62,100 @@ $text-color: #f6f9fb;
         line-height: 11px;
         font-size: 14px;
         color: $text-color;
+      }
+    }
+
+    .connect-menu {
+      .background {
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        background-color: rgba($color: #000000, $alpha: 0.65);
+        // opacity: 0.65;
+
+        .content {
+          position: absolute;
+          width: 400px;
+          height: 400px;
+          top: calc(50vh - 200px);
+          left: calc(50vw - 200px);
+          background-color: $background-color;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+
+          .title {
+            color: $text-color;
+            text-align: center;
+            margin-top: 25px;
+          }
+
+          .form {
+            padding: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+
+            .separator {
+              height: 30px;
+            }
+
+            .label {
+              color: $text-color;
+              font-size: 20px;
+              margin-bottom: 10px;
+            }
+  
+            .input {
+              border: none;
+              padding: 3px;
+              font-size: 15px;
+
+              &:focus {
+                outline: none;
+              }
+            }
+
+            .connect-button {
+              width: 80%;
+              height: 35px;
+              border-radius: 7px;
+              margin-left: auto;
+              margin-right: auto;
+              background-color: $primary-color;
+              border: none;
+              cursor: pointer;
+            }
+
+            .interactive {
+              background-color: $accent-color;
+
+              &:hover {
+                background-color: #29965e;
+              }
+            }
+          }
+
+          .cancel-button {
+            width: 25%;
+            min-height: 25px;
+            border-radius: 7px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #d63c3c;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 60px;
+            margin-top: auto;
+
+            &:hover {
+                background-color: #bd2f2f;
+            }
+          }
+        } 
       }
     }
   }

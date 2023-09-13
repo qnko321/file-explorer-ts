@@ -117,7 +117,7 @@ const useDirectoryWindow = () => {
             path: currentPath,
         })
         .then(_ => {
-            console.log("Successfully created new folder!")
+            console.log("Successfully created a new file!")
             invoke("get_directory_content", {path: currentPath}).then(entries => {
                 setEntriesCache(prevState => ({
                     ...prevState,
@@ -140,7 +140,7 @@ const useDirectoryWindow = () => {
             path: currentPath,
         })
         .then(_ => {
-            console.log("Successfully created new folder!")
+            console.log("Successfully created a new folder!")
             invoke("get_directory_content", {path: currentPath}).then(entries => {
                 setEntriesCache(prevState => ({
                     ...prevState,
@@ -161,6 +161,19 @@ const useDirectoryWindow = () => {
         invoke('open_powershell', {path: currentPath});
     }
 
+    const transferSelected = () => {
+        const selected_entries = tabs.data[tabs.currentTabIndex].selectedEntries;
+        const selected_entries_cleaned = selected_entries.map((entry, _) => {
+            return {
+                path: entry.path,
+                is_dir: entry.isDir,
+            }
+        });
+        invoke('transfer_selected', {
+            entries: selected_entries_cleaned,
+        });
+    }
+
     return {
         tabs,
         currentPath,
@@ -172,6 +185,7 @@ const useDirectoryWindow = () => {
         handleNewFileClick,
         isCreatingNewFile,
         openPowerShell,
+        transferSelected,
     };
 }
 

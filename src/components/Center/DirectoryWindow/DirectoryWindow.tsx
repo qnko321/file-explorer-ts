@@ -1,4 +1,3 @@
-import { useState } from "react";
 import CurrentPathDisplay from "./CurrentPathDisplay/CurrentPathDisplay";
 import Directory from "./Entries/Directory";
 import File from "./Entries/File";
@@ -13,6 +12,9 @@ import DirectoryWindowContextMenu from "./ContextMenus/DirectoryWindowContextMen
 import TabContextMenu from "./ContextMenus/TabContextMenu/TabContextMenu";
 import useTabContextMenu from "./ContextMenus/TabContextMenu/useTabContextMenu";
 import NewFileTemplate from "./NewEntries/NewFileTemplate";
+import useFileContextMenu from "./ContextMenus/FileContextMenu/useFileContextMenu";
+import FileContextMenu from "./ContextMenus/FileContextMenu/FileContextMenu";
+import { useEffect } from "react";
 
 const DirectoryWindow: React.FC = () => {
     const {
@@ -26,14 +28,23 @@ const DirectoryWindow: React.FC = () => {
         handleNewFileClick,
         isCreatingNewFile,
         openPowerShell,
+        transferSelected,
     } = useDirectoryWindow();
 
     const {
         displayFolderContextMenu,
         folderContextMenuData,
         openDirectoryInNewTab,
-        openFolderContextMenu
+        openFolderContextMenu,
+        transferFolder
     } = useFolderContextMenu();
+
+    const {
+        displayFileContextMenu,
+        fileContextMenuData,
+        openFileContextMenu,
+        transferFile,
+    } = useFileContextMenu();
     
     const {
         openDirectoryWindowContextMenu,
@@ -48,14 +59,16 @@ const DirectoryWindow: React.FC = () => {
         openTabContextMenu
     } = useTabContextMenu();
 
+    useEffect(() => {
+        
+    }, []);
+
     return (
         <div 
             className="directory-window"
             onContextMenu={(e) => openDirectoryWindowContextMenu(e)}
         >
-            <div style={{
-                color: "white",
-            }}>
+            <div style={{color: "white"}}>
                 {JSON.stringify(tabs)}
             </div>
             <div className="tabs-container">
@@ -92,6 +105,7 @@ const DirectoryWindow: React.FC = () => {
                             key={index}
                             name={entry.name}
                             path={entry.path}
+                            openContextMenu={openFileContextMenu}
                             index={index}
                             isSelected={tabs.data[tabs.currentTabIndex].selectedEntries.some((entry, _) => entry.index === index)}
                         />
@@ -109,6 +123,14 @@ const DirectoryWindow: React.FC = () => {
                 displayFolderContextMenu={displayFolderContextMenu} 
                 folderContextMenuData={folderContextMenuData}
                 openDirectoryInNewTab={openDirectoryInNewTab}
+                transferFolder={transferFolder}
+                transferSelected={transferSelected}
+            />
+            <FileContextMenu 
+                displayFileContextMenu={displayFileContextMenu} 
+                fileContextMenuData={fileContextMenuData}
+                transferFile={transferFile}
+                transferSelected={transferSelected}
             />
             <DirectoryWindowContextMenu 
                 displayDirectoryWindowContextMenu={displayDirectoryWindowContextMenu} 

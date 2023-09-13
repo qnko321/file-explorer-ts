@@ -19,9 +19,9 @@ const DirectoryWindowContextMenu: React.FC<DirectoryWindowContextMenuProps> = ({
         >
             <ul>
                 {currentPath !== "drives" ? [
-                    (<li onClick={() => {handleNewFolderClick()}}>New Folder</li>),
-                    (<li onClick={() => {handleNewFileClick()}}>New File</li>),
-                    (<li onClick={() => {openPowerShell()}}>Open Powershell Here</li>)
+                    (<li key="new-folder" onClick={() => {handleNewFolderClick()}}>New Folder</li>),
+                    (<li key="new-file" onClick={() => {handleNewFileClick()}}>New File</li>),
+                    (<li key="open-power-shell" onClick={() => {openPowerShell()}}>Open Powershell Here</li>)
                 ] : <li className="not-hoverable">No actions here</li>}
             </ul>
         </div>
