@@ -1,12 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useRef, useState } from "react";
 
-interface NewFileTemplateProps {
-    create: (name: string) => void,
-}
-
-const NewFileTemplate: React.FC<NewFileTemplateProps> = ({create}) => {
-    const [name, setName] = useState("New File");
+const DetailsNewFolderTemplate: React.FC = ({create}) => {
+    const [name, setName] = useState("New Folder");
     const nameRef = useRef(name);
     const nameInputRef = useRef();
 
@@ -50,8 +46,8 @@ const NewFileTemplate: React.FC<NewFileTemplateProps> = ({create}) => {
     }
 
     return (
-        <div className={"file entry"}>
-            <img src="./file.svg"/>
+        <div className={"directory entry"}>
+            <img src="./folder.svg"/>
             <input 
                 type="text" 
                 ref={nameInputRef} 
@@ -65,4 +61,4 @@ const NewFileTemplate: React.FC<NewFileTemplateProps> = ({create}) => {
     )
 }
 
-export default NewFileTemplate;
+export default DetailsNewFolderTemplate;

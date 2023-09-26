@@ -1,6 +1,6 @@
 import { emit, listen, Event } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
-import { close } from "../../../../../slices/tabsSlice";
+import { close, closeAll, closeOthers, closeToTheLeft, closeToTheRight } from "../../../../../slices/tabsSlice";
 import { useDispatch } from "react-redux";
 import CloseContextMenuEventPayload from "../../../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
 
@@ -31,6 +31,27 @@ const useTabContextMenu = () => {
         closeTabContextMenu();
     }
 
+    const closeOthersTabs = () => {
+        dispatch(closeOthers(tabContextMenuData.index));
+        closeTabContextMenu();
+    }
+    
+    const closeAllTabs = () => {
+        dispatch(closeAll());
+        closeTabContextMenu();
+    }
+
+    const closeTabsToTheLeft = () => {
+        dispatch(closeToTheLeft(tabContextMenuData.index));
+        closeTabContextMenu();
+    }
+
+    const closeTabsToTheRight = () => {
+        dispatch(closeToTheRight(tabContextMenuData.index));
+        closeTabContextMenu();
+    }
+
+
     const openTabContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
         e.preventDefault();
         e.stopPropagation();
@@ -54,6 +75,10 @@ const useTabContextMenu = () => {
         displayTabContextMenu,
         tabContextMenuData,
         closeTab,
+        closeAllTabs,
+        closeTabsToTheLeft,
+        closeTabsToTheRight,
+        closeOthersTabs,
         openTabContextMenu
     };
 }

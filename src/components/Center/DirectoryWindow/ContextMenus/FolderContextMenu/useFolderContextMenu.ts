@@ -57,7 +57,18 @@ const useFolderContextMenu = () => {
     const transferFolder = () => {
         invoke("send_folder_all", {
             path: folderContextMenuData.path,
+        }).catch(error => {
+            emit("display-error", {
+                error
+            });
         });
+    }
+
+    const openFolder = () => {
+        dispatch(open({
+            path: folderContextMenuData.path,
+            newTab: false,
+        }));
     }
 
     return {
@@ -66,6 +77,7 @@ const useFolderContextMenu = () => {
         openDirectoryInNewTab,
         openFolderContextMenu,
         transferFolder,
+        open: openFolder,
     };
 }
 

@@ -4,9 +4,12 @@ interface FolderContextMenuProps {
     openDirectoryInNewTab: () => void,
     transferFolder: () => void,
     transferSelected: () => void,
+    open: () => void,
+    rename: () => void,
+    deleteEntry: () => void,
 }
 
-const FolderContextMenu: React.FC<FolderContextMenuProps> = ({displayFolderContextMenu, folderContextMenuData, openDirectoryInNewTab, transferFolder, transferSelected}) => {
+const FolderContextMenu: React.FC<FolderContextMenuProps> = ({displayFolderContextMenu, folderContextMenuData, openDirectoryInNewTab, transferFolder, transferSelected, open, rename, deleteEntry}) => {
     return (
         <div 
             className="context-menu"
@@ -17,7 +20,10 @@ const FolderContextMenu: React.FC<FolderContextMenuProps> = ({displayFolderConte
             }}
         >
             <ul>
+                <li onClick={() => {open()}}>Open</li>
                 <li onClick={() => {openDirectoryInNewTab()}}>Open in New Tab</li>
+                <li onClick={() => {rename()}}>Rename</li>
+                <li onClick={() => {deleteEntry()}}>Open in New Tab</li>
                 <li onClick={() => {transferFolder()}}>Transfer</li>
                 <li onClick={() => {transferSelected()}}>Transfer Selected</li>
             </ul>

@@ -3,6 +3,7 @@ import { MouseEventHandler, useState } from "react";
 import { Entry } from "../../../../intefaces/Entry";
 import { open } from "../../../../slices/tabsSlice";
 import { useDispatch } from "react-redux";
+import { emit } from "@tauri-apps/api/event";
 
 const ExplorerEntry: React.FC<Entry> = ({name, path}) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -31,9 +32,10 @@ const ExplorerEntry: React.FC<Entry> = ({name, path}) => {
             .then(response => {
                 setChildren(response as Entry[]);
                 setIsExpanded(true);
-            })
-            .catch(error => {
-                console.error(error);
+            }).catch(error => {
+                emit("display-error", {
+                    error
+                });
             });
         }
     }

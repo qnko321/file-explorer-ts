@@ -3,9 +3,10 @@ import TabData from "./TabData";
 import { Entry } from "../../../intefaces/Entry";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api";
-import { close, open } from "../../../slices/tabsSlice";
-import { emit, listen, Event } from "@tauri-apps/api/event";
-import CloseContextMenuEventPayload from "../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
+import { emit } from "@tauri-apps/api/event";
+import { deselectAll } from "../../../slices/tabsSlice";
+import displayConfirmation from "../../ConfirmationManager/useConfirmationManager";
+import { ConfirmationValue } from "../../ConfirmationManager/ConfirmationrWindow/ConfirmationWindow";
 
 type EntriesChache = {
     [path: string]: Entry[]
@@ -17,7 +18,9 @@ const useDirectoryWindow = () => {
     const [isCreatingNewFolder, setIsCreatingNewFolder] = useState<boolean>(false);
     const [isCreatingNewFile, setIsCreatingNewFile] = useState<boolean>(false);
 
-    const tabs: {
+    const dispatch = useDispatch();
+
+    const tabsState: {
         currentTabIndex: number,
         data: TabData[]
     } = useSelector((state: {tabs: {
@@ -25,37 +28,21 @@ const useDirectoryWindow = () => {
         data: TabData[]
     }}) => state.tabs);
 
-    const tabsRef = useRef(tabs);
+    const tabsStateRef = useRef(tabsState);
 
-    const currentPath = tabsRef.current.currentTabIndex > -1 ? tabsRef.current.data[tabsRef.current.currentTabIndex].path : "";
+    const currentPath = tabsState.currentTabIndex > -1 ? tabsState.data[tabsState.currentTabIndex].path : "";
 
     useEffect(() => {
-        tabsRef.current = tabs;
-    }, [tabs]);
+        tabsStateRef.current = tabsState;
+    }, [tabsState]);
 
+    //TODO:
     useEffect(() => {
         const handleKeyDown = (event: any) => {
             if (event.key === 'Delete') {
-                const selectedEntries = tabsRef.current.data[tabsRef.current.currentTabIndex].selectedEntries;
-                const toDelete = selectedEntries.map((entry, _) => {
-                    return {
-                        is_dir: entry.isDir,
-                        path: entry.path,
-                    };
-                });
-                invoke("delete_entries", {
-                    entries: toDelete,
-                }).then(_ => {
-                    const currentPath = tabsRef.current.data[tabsRef.current.currentTabIndex].path;
-                    invoke("get_directory_content", {path: currentPath}).then(entries => {
-                        setEntriesCache(prevState => ({
-                            ...prevState,
-                            [currentPath]: entries as Entry[],
-                        }))
-                    });
-                }). catch(error => {
-                    console.error(error);
-                });
+                deleteEntry();
+            } else if (event.key === "F2") {
+                rename();
             }
         };
 
@@ -66,7 +53,44 @@ const useDirectoryWindow = () => {
         }
     }, []);
 
-    const getEntries = (path: string): Entry[] => {
+    const deleteEntry = () => {
+        const selectedEntries = tabsState.data[tabsState.currentTabIndex].selectedEntries;
+        const toDelete = selectedEntries.map((entry, _) => {
+            return {
+                is_dir: entry.isDir,
+                path: entry.path,
+            };
+        });
+        displayConfirmation("", `Are you sure you want to delete:\n ${JSON.stringify(toDelete)}`, false, false, true, true)
+        .then(result => {
+            if (result == ConfirmationValue.Yes) {
+                invoke("delete_entries", {
+                    entries: toDelete,
+                }).then(_ => {
+                    refreshCurrent();
+                }).catch(error => {
+                    console.log(error);
+                    
+                    emit("display-error", {
+                        error
+                    });
+                });
+            }
+        });
+    }
+
+    const rename = () => {
+        const selectedEntries = tabsStateRef.current.data[tabsStateRef.current.currentTabIndex].selectedEntries;
+        const lastEntry = selectedEntries[selectedEntries.length - 1];
+        const index = lastEntry.index;
+        
+        emit('rename-entry', {
+            index,
+        });
+    }
+
+    //TODO:
+    const getEntriesInDirectory = (path: string): Entry[] => {
         if (entriesCache[path] !== undefined) {
             return entriesCache[path];
         }
@@ -82,7 +106,11 @@ const useDirectoryWindow = () => {
                 
                 setEntriesCache(prevState => ({...prevState, [path]: newEntries}));
                 return newEntries;
-            })
+            }).catch(error => {
+                emit("display-error", {
+                    error
+                });
+            });
         } else {
             invoke("get_directory_content", {path}).then(entries => {
                 setEntriesCache(prevState => ({
@@ -91,41 +119,55 @@ const useDirectoryWindow = () => {
                 }))
                 
                 return entries;
-            })
+            }).catch(error => {
+                console.log(error);
+                emit("display-error", {
+                    error
+                });
+            });
         }
 
         return [];
     }
 
     const searchForInEntries = (path: string, searchFor: string): Entry[] => {
-        const entries = getEntries(path);
+        const entries = getEntriesInDirectory(path);
         const searchForLowered = searchFor.toLowerCase();
 
-        const startsWith = entries.filter((entry, index) => entry.name.toLowerCase().startsWith(searchForLowered));
+        const startsWith = entries.filter((entry, _) => entry.name.toLowerCase().startsWith(searchForLowered));
 
-        const contains = entries.filter((entry, index) => entry.name.toLowerCase().includes(searchForLowered));
+        const contains = entries.filter((entry, _) => entry.name.toLowerCase().includes(searchForLowered));
 
         const results = [...startsWith, ...contains];
         const filteredResults = results.filter((value, index, self) => self.indexOf(value) === index);
         return filteredResults;
     }
+
+    const refreshCurrent = () => {
+        dispatch(deselectAll());
+        const currentPath = tabsState.data[tabsState.currentTabIndex].path;
+        invoke("get_directory_content", {path: currentPath}).then(entries => {
+            setEntriesCache(prevState => ({
+                ...prevState,
+                [currentPath]: entries as Entry[],
+            }))
+        });
+    }
     
     const createNewFile = (name: string) => {
-        const currentPath = tabs.data[tabs.currentTabIndex].path;
+        const currentPath = tabsState.data[tabsState.currentTabIndex].path;
         invoke('create_new_file', {
             name: name,
             path: currentPath,
         })
         .then(_ => {
             console.log("Successfully created a new file!")
-            invoke("get_directory_content", {path: currentPath}).then(entries => {
-                setEntriesCache(prevState => ({
-                    ...prevState,
-                    [currentPath]: entries as Entry[],
-                }))
+            refreshCurrent();
+        }).catch(error => {
+            emit("display-error", {
+                error
             });
-        })
-        .catch(error => emit('show-error', {error}));
+        });
         setIsCreatingNewFile(false);
     }
 
@@ -134,21 +176,19 @@ const useDirectoryWindow = () => {
     }
 
     const createNewFolder = (name: string) => {
-        const currentPath = tabs.data[tabs.currentTabIndex].path;
+        const currentPath = tabsState.data[tabsState.currentTabIndex].path;
         invoke('create_new_folder', {
             name: name,
             path: currentPath,
         })
         .then(_ => {
             console.log("Successfully created a new folder!")
-            invoke("get_directory_content", {path: currentPath}).then(entries => {
-                setEntriesCache(prevState => ({
-                    ...prevState,
-                    [currentPath]: entries as Entry[],
-                }))
+            refreshCurrent();
+        }).catch(error => {
+            emit("display-error", {
+                error
             });
-        })
-        .catch(error => emit('show-error', {error}));
+        });
         setIsCreatingNewFolder(false);
     }
 
@@ -157,25 +197,34 @@ const useDirectoryWindow = () => {
     }
 
     const openPowerShell = () => {
-        const currentPath = tabs.data[tabs.currentTabIndex].path; 
-        invoke('open_powershell', {path: currentPath});
+        const currentPath = tabsState.data[tabsState.currentTabIndex].path; 
+        invoke('open_powershell', {path: currentPath}).catch(error => {
+            emit("display-error", {
+                error
+            });
+        });
     }
 
     const transferSelected = () => {
-        const selected_entries = tabs.data[tabs.currentTabIndex].selectedEntries;
+        const selected_entries = tabsState.data[tabsState.currentTabIndex].selectedEntries;
         const selected_entries_cleaned = selected_entries.map((entry, _) => {
             return {
                 path: entry.path,
                 is_dir: entry.isDir,
             }
         });
+        
         invoke('transfer_selected', {
             entries: selected_entries_cleaned,
+        }).catch(error => {
+            emit("display-error", {
+                error
+            });
         });
     }
 
     return {
-        tabs,
+        tabsState,
         currentPath,
         searchForInEntries,
         createNewFolder,
@@ -186,6 +235,8 @@ const useDirectoryWindow = () => {
         isCreatingNewFile,
         openPowerShell,
         transferSelected,
+        refreshCurrent,
+        deleteEntry,
     };
 }
 

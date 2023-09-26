@@ -1,13 +1,21 @@
 import { invoke } from "@tauri-apps/api";
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
+import { BounceLoader } from "react-spinners";
 
 interface ConnectMenuProps {
     display: boolean,
     close: () => void,
     connected: () => void,
+    storeAddress: (address: string) => void,
 }
 
-const ConnectMenu: React.FC<ConnectMenuProps> = ({display, close, connected}) => {
+const override: CSSProperties = {
+    display: "block",
+    margin: "auto",
+    borderColor: "red",
+};
+
+const ConnectMenu: React.FC<ConnectMenuProps> = ({display, close, connected, storeAddress}) => {
     const [ipAddress, setIpAddress] = useState<string>('127.0.0.1');
     const ipAddressInputRef = useRef();
     const [port, setPort] = useState<string>('8082');
@@ -28,6 +36,9 @@ const ConnectMenu: React.FC<ConnectMenuProps> = ({display, close, connected}) =>
                 connected();
                 closeMe();
                 setIsConnecting(false);
+                console.log(`${ipAddress}:${port}`);
+                
+                storeAddress(`${ipAddress}:${port}`);
             }
         }).catch(error => {
             if (isConnectingRef.current) {
@@ -61,13 +72,20 @@ const ConnectMenu: React.FC<ConnectMenuProps> = ({display, close, connected}) =>
                         <div className="content">
                             <h2 className="title">Connect to file Transfer Server</h2>
                             {isConnecting ? (
-                                // show loading screen
-                                <div>
-                                    loading
+                                <div className="loading">
+                                    <BounceLoader
+                                        color={"#21b66a"}
+                                        loading={true}
+                                        cssOverride={override}
+                                        size={100}
+                                        aria-label="Loading Spinner"
+                                        data-testid="loader"
+                                    />
+                                    <h2>Connecting...</h2>
                                 </div>
                             ) : (
                                 error !== "" ? (
-                                    <div>{error}</div>
+                                    <div className="error">{error}</div>
                                 ) : (
                                     <div className="form">
                                         <div className="separator"/>
@@ -82,7 +100,7 @@ const ConnectMenu: React.FC<ConnectMenuProps> = ({display, close, connected}) =>
                                     </div>
                                 )
                             )}
-                            <button className="cancel-button" onClick={closeMe}>Cancel</button>
+                            <button className="cancel-button" disabled={isConnecting} onClick={closeMe}>Cancel</button>
                         </div>
                     </div>
                 </div>

@@ -1,7 +1,4 @@
 import CurrentPathDisplay from "./CurrentPathDisplay/CurrentPathDisplay";
-import Directory from "./Entries/Directory";
-import File from "./Entries/File";
-import NewFolderTemplate from "./NewEntries/NewFolderTemplate";
 import SearchBox from "./SearchBox/SearchBox";
 import Tab from "./Tab/Tab";
 import useDirectoryWindow from "./useDirectoryWIndow";
@@ -11,14 +8,14 @@ import useDirectoryWindowContextMenu from "./ContextMenus/DirectoryWindowContext
 import DirectoryWindowContextMenu from "./ContextMenus/DirectoryWindowContextMenu/DirectoryWindowMenu";
 import TabContextMenu from "./ContextMenus/TabContextMenu/TabContextMenu";
 import useTabContextMenu from "./ContextMenus/TabContextMenu/useTabContextMenu";
-import NewFileTemplate from "./NewEntries/NewFileTemplate";
 import useFileContextMenu from "./ContextMenus/FileContextMenu/useFileContextMenu";
 import FileContextMenu from "./ContextMenus/FileContextMenu/FileContextMenu";
-import { useEffect } from "react";
+import TransferProgressBarsContainer from "./TransferProgressBarsContainer/TransferProgressBarsContainer";
+import EntriesDisplay from "./EntriesDisplay/EntriesDisplay";
 
 const DirectoryWindow: React.FC = () => {
     const {
-        tabs,
+        tabsState,
         currentPath,
         searchForInEntries,
         createNewFolder,
@@ -29,6 +26,8 @@ const DirectoryWindow: React.FC = () => {
         isCreatingNewFile,
         openPowerShell,
         transferSelected,
+        refreshCurrent,
+        deleteEntry,
     } = useDirectoryWindow();
 
     const {
@@ -36,7 +35,8 @@ const DirectoryWindow: React.FC = () => {
         folderContextMenuData,
         openDirectoryInNewTab,
         openFolderContextMenu,
-        transferFolder
+        transferFolder,
+        open,
     } = useFolderContextMenu();
 
     const {
@@ -44,6 +44,8 @@ const DirectoryWindow: React.FC = () => {
         fileContextMenuData,
         openFileContextMenu,
         transferFile,
+        openFile,
+        rename,
     } = useFileContextMenu();
     
     const {
@@ -56,68 +58,53 @@ const DirectoryWindow: React.FC = () => {
         displayTabContextMenu,
         tabContextMenuData,
         closeTab,
-        openTabContextMenu
+        closeAllTabs,
+        closeOthersTabs,
+        closeTabsToTheLeft,
+        closeTabsToTheRight,
+        openTabContextMenu,
     } = useTabContextMenu();
-
-    useEffect(() => {
-        
-    }, []);
 
     return (
         <div 
             className="directory-window"
             onContextMenu={(e) => openDirectoryWindowContextMenu(e)}
         >
-            <div style={{color: "white"}}>
-                {JSON.stringify(tabs)}
-            </div>
             <div className="tabs-container">
                 {
-                    tabs.data.map((tab, index) => (
+                    tabsState.data.map((tab, index) => (
                         <Tab 
                             key={index} 
                             title={tab.title} 
                             index={index}
-                            isSelected={index === tabs.currentTabIndex}
+                            isSelected={index === tabsState.currentTabIndex}
                             openContextMenu={openTabContextMenu}
                         />
                     ))
                 }
             </div>
             <div className="under-tabs-controls">
-                {(tabs.currentTabIndex > -1) && <CurrentPathDisplay path={tabs.data[tabs.currentTabIndex].path}/>}
-                {(tabs.currentTabIndex > -1) && <SearchBox searchFor={tabs.data[tabs.currentTabIndex].searchFor}/>}
+                {(tabsState.currentTabIndex > -1) && <CurrentPathDisplay path={tabsState.data[tabsState.currentTabIndex].path}/>}
+                {(tabsState.currentTabIndex > -1) && <SearchBox searchFor={tabsState.data[tabsState.currentTabIndex].searchFor}/>}
             </div>
-            <div className="entries-container">
-                {
-                    tabs.data[tabs.currentTabIndex] && searchForInEntries(tabs.data[tabs.currentTabIndex].path, tabs.data[tabs.currentTabIndex].searchFor).map((entry, index) => (
-                        entry.is_dir ? 
-                        <Directory 
-                            key={index}
-                            name={entry.name}
-                            path={entry.path}
-                            openContextMenu={openFolderContextMenu}
-                            index={index}
-                            isSelected={tabs.data[tabs.currentTabIndex].selectedEntries.some((entry, _) => entry.index === index)}
-                        />
-                        :
-                        <File
-                            key={index}
-                            name={entry.name}
-                            path={entry.path}
-                            openContextMenu={openFileContextMenu}
-                            index={index}
-                            isSelected={tabs.data[tabs.currentTabIndex].selectedEntries.some((entry, _) => entry.index === index)}
-                        />
-                    ))
-                }
-                {(isCreatingNewFolder && tabs.data[tabs.currentTabIndex].path !== "drives") && <NewFolderTemplate create={createNewFolder}/>}
-                {(isCreatingNewFile && tabs.data[tabs.currentTabIndex].path !== "drives") && <NewFileTemplate create={createNewFile}/>}
-            </div>
+            <EntriesDisplay
+                tabsData={tabsState}
+                openFileContextMenu={openFileContextMenu}
+                openFolderContextMenu={openFolderContextMenu}
+                searchForInEntries={searchForInEntries} 
+                isCreatingNewFolder={isCreatingNewFolder}
+                createNewFolder={createNewFolder} 
+                isCreatingNewFile={isCreatingNewFile}
+                createNewFile={createNewFile}            
+            />
             <TabContextMenu 
                 displayTabContextMenu={displayTabContextMenu}
                 tabContextMenuData={tabContextMenuData}
                 closeTab={closeTab}
+                closeAll={closeAllTabs}
+                closeOthers={closeOthersTabs}
+                closeTabsToTheLeft={closeTabsToTheLeft}
+                closeTabsToTheRight={closeTabsToTheRight}
             />
             <FolderContextMenu 
                 displayFolderContextMenu={displayFolderContextMenu} 
@@ -125,12 +112,18 @@ const DirectoryWindow: React.FC = () => {
                 openDirectoryInNewTab={openDirectoryInNewTab}
                 transferFolder={transferFolder}
                 transferSelected={transferSelected}
+                open={open}
+                rename={rename}
+                deleteEntry={deleteEntry}
             />
             <FileContextMenu 
                 displayFileContextMenu={displayFileContextMenu} 
                 fileContextMenuData={fileContextMenuData}
                 transferFile={transferFile}
                 transferSelected={transferSelected}
+                openFile={openFile}
+                rename={rename}
+                deleteEntry={deleteEntry}
             />
             <DirectoryWindowContextMenu 
                 displayDirectoryWindowContextMenu={displayDirectoryWindowContextMenu} 
@@ -139,7 +132,9 @@ const DirectoryWindow: React.FC = () => {
                 handleNewFileClick={handleNewFileClick} 
                 openPowerShell={openPowerShell}
                 currentPath={currentPath}
+                refresh={refreshCurrent}
             />
+            <TransferProgressBarsContainer/>
         </div>
     )
 }

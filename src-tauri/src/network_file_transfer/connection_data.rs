@@ -1,4 +1,4 @@
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot, broadcast};
 use x25519_dalek::{EphemeralSecret, SharedSecret};
 
 use super::client::Packet;
@@ -8,6 +8,7 @@ pub(crate) struct ConnectionData {
     s_packet_sender: Option<mpsc::UnboundedSender::<Packet>>,
     my_secret: Option<EphemeralSecret>,
     aes_key: Option<SharedSecret>,
+    disconect_sender: Option<broadcast::Sender<()>>
 }
 
 impl ConnectionData {
@@ -17,17 +18,24 @@ impl ConnectionData {
             s_packet_sender: None,
             my_secret: None,
             aes_key: None,
+            disconect_sender: None,
         }
     }
 
-    pub(crate) fn connected(&mut self, s_packet_sender: mpsc::UnboundedSender::<Packet>) {
+    pub(crate) fn connected(&mut self, s_packet_sender: mpsc::UnboundedSender::<Packet>, disconnect_sender: broadcast::Sender<()>) {
         self.is_connected = true;
         self.s_packet_sender = Some(s_packet_sender);
+        self.disconect_sender = Some(disconnect_sender);
     }
 
     pub(crate) fn disconnected(&mut self) {
         self.is_connected = false;
         self.s_packet_sender = None;
+    }
+
+    pub(crate) fn disconnect(&mut self) {
+        let sender = self.disconect_sender.take().unwrap();
+        sender.send(()).unwrap();
     }
 
     pub(crate) fn get_s_packet_sender(&self) -> Option<mpsc::UnboundedSender::<Packet>> {

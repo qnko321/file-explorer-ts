@@ -3,9 +3,12 @@ interface FolderContextMenuProps {
     fileContextMenuData: {x: string, y: string, path: string},
     transferFile: () => void,
     transferSelected: () => void,
+    openFile: () => void,
+    rename: () => void,
+    deleteEntry: () => void,
 }
 
-const FileContextMenu: React.FC<FolderContextMenuProps> = ({displayFileContextMenu, fileContextMenuData, transferFile, transferSelected}) => {
+const FileContextMenu: React.FC<FolderContextMenuProps> = ({displayFileContextMenu, fileContextMenuData, transferFile, transferSelected, openFile, rename, deleteEntry}) => {
     return (
         <div 
             className="context-menu"
@@ -16,6 +19,9 @@ const FileContextMenu: React.FC<FolderContextMenuProps> = ({displayFileContextMe
             }}
         >
             <ul>
+                <li onClick={() => {openFile()}}>Open</li>
+                <li onClick={() => {rename()}}>Rename</li>
+                <li onClick={() => {deleteEntry(true)}}>Delete</li>
                 <li onClick={() => {transferFile()}}>Transfer</li>
                 <li onClick={() => {transferSelected()}}>Transfer Selected</li>
             </ul>

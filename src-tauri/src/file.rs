@@ -35,3 +35,26 @@ pub(crate) fn open_file(path: &str) {
         );
     }
 }
+
+#[tauri::command]
+pub(crate) fn rename_entry(path: &str, new_name: &str) -> Result<(), String>{
+    println!("{} {}", new_name, path);
+    let old_name = {
+        let path = Path::new(path);
+        path.file_name().unwrap().to_string_lossy().to_string()
+    };
+
+    let new_path = replace_last(path, &old_name, new_name);
+
+    match fs::rename(path, new_path) {
+        Ok(_) => Ok(()),
+        Err(error) => Err(format!("{error}").into())
+    }
+}
+
+fn replace_last(input: &str, to_replace: &str, replacement: &str) -> String {
+    let last_pos = input.rfind(to_replace).unwrap();
+	let mut result = input.to_string();
+	result.replace_range(last_pos..input.len(), replacement);
+	result
+}

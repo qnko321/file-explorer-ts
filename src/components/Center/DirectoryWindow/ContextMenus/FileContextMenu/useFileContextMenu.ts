@@ -24,7 +24,14 @@ const useFileContextMenu = () => {
         }
     }, []);
 
-    const openFileContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, path: string, name: string) => {
+    const rename = () => {
+        const index = fileContextMenuData.index;
+        emit('rename-entry', {
+            index,
+        });
+    }
+
+    const openFileContextMenu = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, path: string, name: string, index: number) => {
         e.preventDefault();
         e.stopPropagation();
         emit('close-context-menu', {
@@ -37,6 +44,7 @@ const useFileContextMenu = () => {
             y: `${e.pageY}`,
             path,
             name,
+            index,
         });
     }
 
@@ -48,6 +56,22 @@ const useFileContextMenu = () => {
         invoke('send_file', {
             path: fileContextMenuData.path,
             name: fileContextMenuData.name,
+        }).catch(error => {
+            console.log(error);
+            
+            emit("display-error", {
+                error
+            });
+        });
+    }
+
+    const openFile = () => {
+        invoke('open_file', {
+            path: fileContextMenuData.path,
+        }).catch(error => {
+            emit("display-error", {
+                error
+            });
         });
     }
 
@@ -56,6 +80,8 @@ const useFileContextMenu = () => {
         fileContextMenuData,
         openFileContextMenu,
         transferFile,
+        openFile,
+        rename
     };
 }
 

@@ -6,6 +6,7 @@ mod drives;
 mod file;
 mod logger;
 mod network_file_transfer;
+mod db;
 
 use crate::directory::__cmd__create_new_folder;
 use crate::directory::__cmd__delete_entries;
@@ -21,10 +22,14 @@ use crate::file::__cmd__create_new_file;
 use crate::file::__cmd__open_file;
 use crate::file::create_new_file;
 use crate::file::open_file;
+use crate::file::__cmd__rename_entry;
+use crate::file::rename_entry;
 use crate::network_file_transfer::client::__cmd__connect;
 use crate::network_file_transfer::client::connect;
 use crate::network_file_transfer::client::__cmd__is_connected;
 use crate::network_file_transfer::client::is_connected;
+use crate::network_file_transfer::client::__cmd__disconnect;
+use crate::network_file_transfer::client::disconnect;
 use fslock::LockFile;
 use logger::setup_logger;
 use network_file_transfer::file_transfer::__cmd__send_file;
@@ -35,6 +40,8 @@ use network_file_transfer::file_transfer::__cmd__send_folder_all;
 use network_file_transfer::file_transfer::send_folder_all;
 use network_file_transfer::file_transfer::__cmd__transfer_selected;
 use network_file_transfer::file_transfer::transfer_selected;
+use db::__cmd__add_favourite;
+use db::add_favourite;
 use std::process::Command;
 use std::net::UdpSocket;
 use std::process::Stdio;
@@ -111,6 +118,8 @@ fn main() {
             send_folder_all,
             is_connected,
             transfer_selected,
+            disconnect,
+            rename_entry,
         ])
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {

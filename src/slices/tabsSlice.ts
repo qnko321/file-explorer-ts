@@ -30,6 +30,7 @@ type SelectEntryPayload = {
     index: number,
     path: string,
     isDir: boolean,
+    ctrlDown: boolean,
 };
 
 export const tabSlice = createSlice({
@@ -42,24 +43,57 @@ export const tabSlice = createSlice({
         create: (state, action: PayloadAction<CreatePayload>) => {
             const tab = new TabData(action.payload.path);
             state.data.push(tab.toObject());
-            state.currentTabIndex = state.data.length - 1
+            state.currentTabIndex = state.data.length - 1;
         },
         close: (state, action: PayloadAction<ClosePayload>) => {
             if (state.data.length - 1 < action.payload) { 
                 return;
             }
-            if (state.currentTabIndex === action.payload) {
-                state.currentTabIndex = state.data.length - 1;
+
+            if (state.currentTabIndex === action.payload || state.currentTabIndex === state.data.length - 1) {
+                state.currentTabIndex = state.data.length - 2;
             }
             state.data = state.data.filter((_, index) => index !== action.payload);
-            
+
+            if (state.data.length === 0) {
+                const tab = new TabData(action.payload.path);
+                state.data.push(tab.toObject());
+                state.currentTabIndex = state.data.length - 1
+            }  
+        },
+        closeAll: (state) => {
+            const tab = new TabData(undefined);
+            const tabObj = tab.toObject();
+            state.data = [tabObj];
+            state.currentTabIndex = 0;
+        },
+        closeOthers: (state, action: PayloadAction<number>) => {
+            state.data = state.data.filter((_, index) => index === action.payload);
+            state.currentTabIndex = 0;
+        },
+        closeToTheLeft: (state, action: PayloadAction<number>) => {
+            const anchor = action.payload;
+            state.data = state.data.filter((_, index) => index >= anchor);
+            if (state.currentTabIndex < anchor) {
+                state.currentTabIndex = anchor;
+            } else {
+                state.currentTabIndex -= anchor;
+            }
+        },
+        closeToTheRight: (state, action: PayloadAction<number>) => {
+            const anchor = action.payload;
+            state.data = state.data.filter((_, index) => index <= anchor);
+            if (state.currentTabIndex < anchor) {
+                state.currentTabIndex = anchor;
+            } else {
+                state.currentTabIndex = state.data.length - 1;
+            }
         },
         open: (state, action: PayloadAction<OpenPayload>) => {
             if (action.payload.newTab) {
                 const tabData = new TabData(action.payload.path);
                 const tabObject = tabData.toObject();
                 state.data.push(tabObject);
-                state.currentTabIndex = state.data.length - 1;
             } else {
                 if (state.currentTabIndex === -1) {
                     return;
@@ -80,15 +114,30 @@ export const tabSlice = createSlice({
             state.currentTabIndex = action.payload.index;
         },
         selectEntry: (state, action: PayloadAction<SelectEntryPayload>) => {
-            if (state.data[state.currentTabIndex].selectedEntries.some(entry => entry.index === action.payload.index && entry.path === action.payload.path)) {
-                state.data[state.currentTabIndex].selectedEntries = state.data[state.currentTabIndex].selectedEntries.filter((entry, _) => entry.index !== action.payload.index);
+            if (action.payload.ctrlDown) {
+                if (state.data[state.currentTabIndex].selectedEntries.some(entry => entry.index === action.payload.index && entry.path === action.payload.path)) {
+                    state.data[state.currentTabIndex].selectedEntries = state.data[state.currentTabIndex].selectedEntries.filter((entry, _) => entry.index !== action.payload.index);
+                } else {
+                    state.data[state.currentTabIndex].selectedEntries.push({
+                        index: action.payload.index,
+                        path: action.payload.path,
+                        isDir: action.payload.isDir,
+                    } as SelectedEntry);
+                }
             } else {
-                state.data[state.currentTabIndex].selectedEntries.push({
-                    index: action.payload.index,
-                    path: action.payload.path,
-                    isDir: action.payload.isDir,
-                } as SelectedEntry);
+                if (state.data[state.currentTabIndex].selectedEntries.some(entry => entry.index === action.payload.index && entry.path === action.payload.path)) {
+                    state.data[state.currentTabIndex].selectedEntries = [];
+                } else {
+                    state.data[state.currentTabIndex].selectedEntries = [{
+                        index: action.payload.index,
+                        path: action.payload.path,
+                        isDir: action.payload.isDir,
+                    }];
+                }
             }
+       },
+        deselectAll: (state) => {
+            state.data[state.currentTabIndex].selectedEntries = [];
         },
         navigateBack: (state) => {
             if (state.currentTabIndex === -1) {
@@ -119,8 +168,13 @@ export const tabSlice = createSlice({
 export const {
     create,
     close,
+    closeOthers,
+    closeAll,
+    closeToTheLeft,
+    closeToTheRight,
     selectTab,
     selectEntry,
+    deselectAll,
     open,
     navigateBack,
     navigateForward,

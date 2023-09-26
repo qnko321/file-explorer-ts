@@ -10,7 +10,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
 use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, Mutex, oneshot, broadcast};
 use uuid::{Uuid};
 use x25519_dalek::{EphemeralSecret, PublicKey};
 use std::collections::HashMap;
@@ -53,27 +53,63 @@ pub(crate) async fn connect(app: AppHandle, ip_address: String, port: String) ->
         s_packet_receiver
     ) = mpsc::unbounded_channel::<Packet>();
 
-    start_receiver(reader_half, r_packet_sender);
-    start_sender(writer_half, s_packet_receiver);
+    let (
+        disconnected_sender,
+        mut disconnected_recevier
+    ) = broadcast::channel::<()>(1);
+
+    start_receiver(reader_half, r_packet_sender, disconnected_sender.subscribe());
+    start_sender(writer_half, s_packet_receiver, disconnected_sender.subscribe());
 
     send_my_public_key(s_packet_sender.clone()).await;
 
     spawn(async move {
         loop {
-            let packet = match r_packet_receiver.recv().await {
-                None => break,
-                Some(packet) => packet
-            };
-    
-            handle_packet(packet).await;
+            tokio::select! {
+                _ = async {
+                    let packet = match r_packet_receiver.recv().await {
+                        None => {
+                            app.emit_all("disconnected", None::<()>).unwrap();
+                            CONNECTION_DATA.lock().await.disconnected();
+                            return;
+                        },
+                        Some(packet) => packet
+                    };
+            
+                    handle_packet(packet).await;
+                } => {},
+                disconnect = async {
+                    let result = disconnected_recevier.try_recv();
+                    let disconnect = match result {
+                        Ok(()) => true,
+                        Err(error) => match error {
+                            broadcast::error::TryRecvError::Empty => false,
+                            broadcast::error::TryRecvError::Closed => true,
+                            broadcast::error::TryRecvError::Lagged(_) => true,
+                        },
+                    };
+
+                    disconnect
+                } => {
+                    if disconnect {
+                        println!("disconnected");
+                        app.emit_all("disconnected", None::<()>).unwrap();
+                        CONNECTION_DATA.lock().await.disconnected();               
+                        return;
+                    }
+                }
+            }
         }
-        app.emit_all("disconnected", None::<()>).unwrap();
-        CONNECTION_DATA.lock().await.disconnected();
     });
 
-    CONNECTION_DATA.lock().await.connected(s_packet_sender);
+    CONNECTION_DATA.lock().await.connected(s_packet_sender, disconnected_sender);
 
     Ok(())
+}
+
+#[tauri::command]
+pub(crate) async fn disconnect() {
+    CONNECTION_DATA.lock().await.disconnect();
 }
 
 async fn send_my_public_key(s_packet_sender: mpsc::UnboundedSender<Packet>) {
