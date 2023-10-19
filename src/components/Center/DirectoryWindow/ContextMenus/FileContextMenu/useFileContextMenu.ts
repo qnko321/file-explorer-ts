@@ -2,14 +2,17 @@ import { emit, listen, Event } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import CloseContextMenuEventPayload from "../../../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
 import { invoke } from "@tauri-apps/api";
+import displayConfirmation from "../../../../ConfirmationManager/useConfirmationManager";
+import { ConfirmationValue } from "../../../../ConfirmationManager/ConfirmationrWindow/ConfirmationWindow";
 
-const useFileContextMenu = () => {
+const useFileContextMenu = (refreshCurrent: () => void) => {
     const [displayFileContextMenu, setDisplayFileContextMenu] = useState<boolean>(false);
-    const [fileContextMenuData, setFileContextMenuData] = useState<{x: string, y: string, path: string, name: string}>({
+    const [fileContextMenuData, setFileContextMenuData] = useState<{x: string, y: string, path: string, name: string, index: number}>({
         x: "0px",
         y: "0px",
         path: "",
         name: "",
+        index: undefined,
     });
 
     useEffect(() => {
@@ -25,9 +28,9 @@ const useFileContextMenu = () => {
     }, []);
 
     const rename = () => {
-        const index = fileContextMenuData.index;
+        const path = fileContextMenuData.path;
         emit('rename-entry', {
-            index,
+            path,
         });
     }
 
@@ -75,13 +78,40 @@ const useFileContextMenu = () => {
         });
     }
 
+    const deleteEntry = () => {
+        const toDelete = [
+            {
+                is_dir: false,
+                path: fileContextMenuData.path
+            }
+        ];
+
+        displayConfirmation("", `Are you sure you want to delete:\n ${JSON.stringify(toDelete)}`, false, false, true, true)
+        .then(result => {
+            if (result == ConfirmationValue.Yes) {
+                invoke("delete_entries", {
+                    entries: toDelete,
+                }).then(_ => {
+                    refreshCurrent();
+                }).catch(error => {
+                    console.log(error);
+                    
+                    emit("display-error", {
+                        error
+                    });
+                });
+            }
+        });
+    }
+
     return {
         displayFileContextMenu,
         fileContextMenuData,
         openFileContextMenu,
         transferFile,
         openFile,
-        rename
+        rename,
+        deleteFileEntry: deleteEntry,
     };
 }
 

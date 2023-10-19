@@ -45,7 +45,7 @@ export const tabSlice = createSlice({
             state.data.push(tab.toObject());
             state.currentTabIndex = state.data.length - 1;
         },
-        close: (state, action: PayloadAction<ClosePayload>) => {
+        close: (state, action: PayloadAction<any>) => {
             if (state.data.length - 1 < action.payload) { 
                 return;
             }
@@ -94,6 +94,7 @@ export const tabSlice = createSlice({
                 const tabData = new TabData(action.payload.path);
                 const tabObject = tabData.toObject();
                 state.data.push(tabObject);
+                state.currentTabIndex = state.data.length - 1;
             } else {
                 if (state.currentTabIndex === -1) {
                     return;
@@ -135,7 +136,26 @@ export const tabSlice = createSlice({
                     }];
                 }
             }
-       },
+        },
+        updateSelectedEntryPath: (state, action: PayloadAction<{oldPath: string, newPath: string}>) => {
+            const oldState = state.data[state.currentTabIndex].selectedEntries;
+
+            const newState = oldState.map((value, index) => {
+                if (value.path !== action.payload.oldPath) {
+                    return value;
+                }
+
+                return {
+                    index: value.index,
+                    isDir: value.isDir,
+                    path: action.payload.newPath,              
+                }
+            });
+
+            console.log(newState);
+            
+            // state.data[state.currentTabIndex].selectedEntries = newState;
+        },
         deselectAll: (state) => {
             state.data[state.currentTabIndex].selectedEntries = [];
         },
@@ -161,7 +181,7 @@ export const tabSlice = createSlice({
         },
         searchTab: (state, action: PayloadAction<SearchPayload>) => {
             state.data[state.currentTabIndex].searchFor = action.payload.searchFor;
-        }
+        },
     }
 })
 
@@ -179,5 +199,6 @@ export const {
     navigateBack,
     navigateForward,
     searchTab,
+    updateSelectedEntryPath,
  } = tabSlice.actions;
 export default tabSlice.reducer;

@@ -66,6 +66,7 @@ const ExplorerEntry: React.FC<Entry> = ({name, path}) => {
             <div className="children">
                 {
                     children.map((entry, index) => (
+                        //@ts-ignore
                         <ExplorerEntry
                             key={index} 
                             name={entry.name} 

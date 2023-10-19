@@ -23,7 +23,7 @@ const FolderContextMenu: React.FC<FolderContextMenuProps> = ({displayFolderConte
                 <li onClick={() => {open()}}>Open</li>
                 <li onClick={() => {openDirectoryInNewTab()}}>Open in New Tab</li>
                 <li onClick={() => {rename()}}>Rename</li>
-                <li onClick={() => {deleteEntry()}}>Open in New Tab</li>
+                <li onClick={() => {deleteEntry()}}>Delete</li>
                 <li onClick={() => {transferFolder()}}>Transfer</li>
                 <li onClick={() => {transferSelected()}}>Transfer Selected</li>
             </ul>

@@ -3,17 +3,18 @@ import TabData from "./TabData";
 import { Entry } from "../../../intefaces/Entry";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { deselectAll } from "../../../slices/tabsSlice";
 import displayConfirmation from "../../ConfirmationManager/useConfirmationManager";
 import { ConfirmationValue } from "../../ConfirmationManager/ConfirmationrWindow/ConfirmationWindow";
+import { refreshEntries } from "../../../slices/entriesSlice";
 
 type EntriesChache = {
     [path: string]: Entry[]
 }
 
 const useDirectoryWindow = () => {
-    const [entriesCache, setEntriesCache] = useState<EntriesChache>({});
+    const [entriesCache,  setEntriesCache] = useState<EntriesChache>({});
 
     const [isCreatingNewFolder, setIsCreatingNewFolder] = useState<boolean>(false);
     const [isCreatingNewFile, setIsCreatingNewFile] = useState<boolean>(false);
@@ -36,11 +37,14 @@ const useDirectoryWindow = () => {
         tabsStateRef.current = tabsState;
     }, [tabsState]);
 
-    //TODO:
     useEffect(() => {
+        const unlisten_refresh_current_tab = listen("refresh-current-tab", (_) => {
+            refreshContent();
+        });
+        
         const handleKeyDown = (event: any) => {
             if (event.key === 'Delete') {
-                deleteEntry();
+                deleteSelectedEntries();
             } else if (event.key === "F2") {
                 rename();
             }
@@ -50,11 +54,12 @@ const useDirectoryWindow = () => {
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
+            unlisten_refresh_current_tab.then(f => f());
         }
     }, []);
 
-    const deleteEntry = () => {
-        const selectedEntries = tabsState.data[tabsState.currentTabIndex].selectedEntries;
+    const deleteSelectedEntries = () => {
+        const selectedEntries = tabsStateRef.current.data[tabsStateRef.current.currentTabIndex].selectedEntries;
         const toDelete = selectedEntries.map((entry, _) => {
             return {
                 is_dir: entry.isDir,
@@ -67,10 +72,9 @@ const useDirectoryWindow = () => {
                 invoke("delete_entries", {
                     entries: toDelete,
                 }).then(_ => {
-                    refreshCurrent();
+                    refreshContent();
+                    dispatch(deselectAll());
                 }).catch(error => {
-                    console.log(error);
-                    
                     emit("display-error", {
                         error
                     });
@@ -81,15 +85,17 @@ const useDirectoryWindow = () => {
 
     const rename = () => {
         const selectedEntries = tabsStateRef.current.data[tabsStateRef.current.currentTabIndex].selectedEntries;
+        if (selectedEntries.length == 0) {
+            return;
+        }
         const lastEntry = selectedEntries[selectedEntries.length - 1];
-        const index = lastEntry.index;
+        const path = lastEntry.path;
         
         emit('rename-entry', {
-            index,
+            path,
         });
     }
 
-    //TODO:
     const getEntriesInDirectory = (path: string): Entry[] => {
         if (entriesCache[path] !== undefined) {
             return entriesCache[path];
@@ -142,19 +148,13 @@ const useDirectoryWindow = () => {
         const filteredResults = results.filter((value, index, self) => self.indexOf(value) === index);
         return filteredResults;
     }
-
-    const refreshCurrent = () => {
-        dispatch(deselectAll());
-        const currentPath = tabsState.data[tabsState.currentTabIndex].path;
-        invoke("get_directory_content", {path: currentPath}).then(entries => {
-            setEntriesCache(prevState => ({
-                ...prevState,
-                [currentPath]: entries as Entry[],
-            }))
-        });
-    }
     
     const createNewFile = (name: string) => {
+        if (name === "") {
+            setIsCreatingNewFile(false);
+            return;
+        }
+
         const currentPath = tabsState.data[tabsState.currentTabIndex].path;
         invoke('create_new_file', {
             name: name,
@@ -162,7 +162,7 @@ const useDirectoryWindow = () => {
         })
         .then(_ => {
             console.log("Successfully created a new file!")
-            refreshCurrent();
+            refreshContent();
         }).catch(error => {
             emit("display-error", {
                 error
@@ -176,6 +176,11 @@ const useDirectoryWindow = () => {
     }
 
     const createNewFolder = (name: string) => {
+        if (name === "") {
+            setIsCreatingNewFolder(false);
+            return;
+        }
+
         const currentPath = tabsState.data[tabsState.currentTabIndex].path;
         invoke('create_new_folder', {
             name: name,
@@ -183,7 +188,7 @@ const useDirectoryWindow = () => {
         })
         .then(_ => {
             console.log("Successfully created a new folder!")
-            refreshCurrent();
+            refreshContent();
         }).catch(error => {
             emit("display-error", {
                 error
@@ -223,6 +228,11 @@ const useDirectoryWindow = () => {
         });
     }
 
+    const refreshContent = () => {
+        //@ts-ignore
+        dispatch(refreshEntries());
+    }
+
     return {
         tabsState,
         currentPath,
@@ -235,8 +245,7 @@ const useDirectoryWindow = () => {
         isCreatingNewFile,
         openPowerShell,
         transferSelected,
-        refreshCurrent,
-        deleteEntry,
+        refreshContent,
     };
 }
 

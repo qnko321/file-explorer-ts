@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { ViewMode } from "../../../Center/DirectoryWindow/EntriesDisplay/useEntriesDisplay";
 import { emit, listen } from "@tauri-apps/api/event";
+import ViewMode from "../../../Center/DirectoryWindow/EntriesDisplay/ViewMode";
 
 const ViewButton: React.FC = () => {
     const [displayMenu, setDisplayMenu] = useState<boolean>(false);
 
     useEffect(() => {
         listen("close-context-menu", (event) => {
+            //@ts-ignore
             if (event.payload.menu != "view-menu") {
                 setDisplayMenu(false);
             }

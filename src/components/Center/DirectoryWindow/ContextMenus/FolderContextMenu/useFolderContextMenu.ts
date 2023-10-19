@@ -4,8 +4,10 @@ import { open } from "../../../../../slices/tabsSlice";
 import { useDispatch } from "react-redux";
 import CloseContextMenuEventPayload from "../../../../../intefaces/EventPayloads/CloseContextMenuEventPayload";
 import { invoke } from "@tauri-apps/api";
+import displayConfirmation from "../../../../ConfirmationManager/useConfirmationManager";
+import { ConfirmationValue } from "../../../../ConfirmationManager/ConfirmationrWindow/ConfirmationWindow";
 
-const useFolderContextMenu = () => {
+const useFolderContextMenu = (refreshCurrent: () => void) => {
     const dispatch = useDispatch();
 
     const [displayFolderContextMenu, setDisplayFolderContextMenu] = useState<boolean>(false);
@@ -71,6 +73,32 @@ const useFolderContextMenu = () => {
         }));
     }
 
+    const deleteFolderEntry = () => {
+        const toDelete = [
+            {
+                is_dir: true,
+                path: folderContextMenuData.path
+            }
+        ];
+
+        displayConfirmation("", `Are you sure you want to delete:\n ${JSON.stringify(toDelete)}`, false, false, true, true)
+        .then(result => {
+            if (result == ConfirmationValue.Yes) {
+                invoke("delete_entries", {
+                    entries: toDelete,
+                }).then(_ => {
+                    refreshCurrent();
+                }).catch(error => {
+                    console.log(error);
+                    
+                    emit("display-error", {
+                        error
+                    });
+                });
+            }
+        });
+    }
+
     return {
         displayFolderContextMenu,
         folderContextMenuData,
@@ -78,6 +106,7 @@ const useFolderContextMenu = () => {
         openFolderContextMenu,
         transferFolder,
         open: openFolder,
+        deleteFolderEntry
     };
 }
 

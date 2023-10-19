@@ -21,7 +21,7 @@ const FileContextMenu: React.FC<FolderContextMenuProps> = ({displayFileContextMe
             <ul>
                 <li onClick={() => {openFile()}}>Open</li>
                 <li onClick={() => {rename()}}>Rename</li>
-                <li onClick={() => {deleteEntry(true)}}>Delete</li>
+                <li onClick={() => {deleteEntry()}}>Delete</li>
                 <li onClick={() => {transferFile()}}>Transfer</li>
                 <li onClick={() => {transferSelected()}}>Transfer Selected</li>
             </ul>

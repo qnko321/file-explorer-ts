@@ -12,6 +12,8 @@ import useFileContextMenu from "./ContextMenus/FileContextMenu/useFileContextMen
 import FileContextMenu from "./ContextMenus/FileContextMenu/FileContextMenu";
 import TransferProgressBarsContainer from "./TransferProgressBarsContainer/TransferProgressBarsContainer";
 import EntriesDisplay from "./EntriesDisplay/EntriesDisplay";
+import { useDispatch } from "react-redux";
+import { refreshEntries } from "../../../slices/entriesSlice";
 
 const DirectoryWindow: React.FC = () => {
     const {
@@ -26,8 +28,7 @@ const DirectoryWindow: React.FC = () => {
         isCreatingNewFile,
         openPowerShell,
         transferSelected,
-        refreshCurrent,
-        deleteEntry,
+        refreshContent,
     } = useDirectoryWindow();
 
     const {
@@ -37,7 +38,8 @@ const DirectoryWindow: React.FC = () => {
         openFolderContextMenu,
         transferFolder,
         open,
-    } = useFolderContextMenu();
+        deleteFolderEntry
+    } = useFolderContextMenu(refreshContent);
 
     const {
         displayFileContextMenu,
@@ -46,7 +48,8 @@ const DirectoryWindow: React.FC = () => {
         transferFile,
         openFile,
         rename,
-    } = useFileContextMenu();
+        deleteFileEntry
+    } = useFileContextMenu(refreshContent);
     
     const {
         openDirectoryWindowContextMenu,
@@ -64,7 +67,7 @@ const DirectoryWindow: React.FC = () => {
         closeTabsToTheRight,
         openTabContextMenu,
     } = useTabContextMenu();
-
+    
     return (
         <div 
             className="directory-window"
@@ -88,14 +91,12 @@ const DirectoryWindow: React.FC = () => {
                 {(tabsState.currentTabIndex > -1) && <SearchBox searchFor={tabsState.data[tabsState.currentTabIndex].searchFor}/>}
             </div>
             <EntriesDisplay
-                tabsData={tabsState}
                 openFileContextMenu={openFileContextMenu}
                 openFolderContextMenu={openFolderContextMenu}
-                searchForInEntries={searchForInEntries} 
-                isCreatingNewFolder={isCreatingNewFolder}
-                createNewFolder={createNewFolder} 
                 isCreatingNewFile={isCreatingNewFile}
-                createNewFile={createNewFile}            
+                isCreatingNewFolder={isCreatingNewFolder}
+                createNewFile={createNewFile}
+                createNewFolder={createNewFolder}
             />
             <TabContextMenu 
                 displayTabContextMenu={displayTabContextMenu}
@@ -114,7 +115,7 @@ const DirectoryWindow: React.FC = () => {
                 transferSelected={transferSelected}
                 open={open}
                 rename={rename}
-                deleteEntry={deleteEntry}
+                deleteEntry={deleteFolderEntry}
             />
             <FileContextMenu 
                 displayFileContextMenu={displayFileContextMenu} 
@@ -123,7 +124,7 @@ const DirectoryWindow: React.FC = () => {
                 transferSelected={transferSelected}
                 openFile={openFile}
                 rename={rename}
-                deleteEntry={deleteEntry}
+                deleteEntry={deleteFileEntry}
             />
             <DirectoryWindowContextMenu 
                 displayDirectoryWindowContextMenu={displayDirectoryWindowContextMenu} 
@@ -132,7 +133,7 @@ const DirectoryWindow: React.FC = () => {
                 handleNewFileClick={handleNewFileClick} 
                 openPowerShell={openPowerShell}
                 currentPath={currentPath}
-                refresh={refreshCurrent}
+                refresh={refreshContent}
             />
             <TransferProgressBarsContainer/>
         </div>

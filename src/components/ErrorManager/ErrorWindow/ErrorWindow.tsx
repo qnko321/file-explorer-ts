@@ -14,6 +14,7 @@ const ErrorWindow: React.FC<ErrorWindowProps> = ({error, title, close}) => {
                 <img className="close-icon-button" src="X.svg" onClick={() => close()}/>
             </div>
             <div className="error">
+                {/* @ts-ignore */}
                 {error instanceof Object ? JSON.stringify(error) : error}
             </div>
         </div>

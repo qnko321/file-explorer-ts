@@ -24,10 +24,12 @@ const Explorer: React.FC = () => {
             <div className="entries">
             {
                 drives.map((drive, index) => (
+                    //@ts-ignore
                     <ExplorerEntry name={drive} path={drive} key={index}/>
                 ))
             }
             <ExplorerSeperator/>
+            {/* @ts-ignore */}
             <ExplorerEntry name={"Recycle Bin"} path="recycle-bin" key={"recycle-bin"}/>
             </div>
         </div>

@@ -109,50 +109,65 @@ pub(crate) fn expand_directory(path: String) -> Result<Vec<Directory>, String> {
 #[tauri::command]
 pub(crate) fn get_directory_content(path: String) -> Result<Vec<Entry>, String> {
     if path == "recycle-bin" {
-        if path == "recycle-bin" {
-            let mut content = vec![];
-    
-            let drives = get_drive_letters();
-    
-            for drive in drives {
-                let recycle_bin_path = format!("{}recycle_bin_cfe", drive);
-                
-                if !Path::new(&recycle_bin_path).exists() {
-                    continue;
-                }
-    
-                let read_dir = match fs::read_dir(recycle_bin_path) {
-                    Ok(read_dir) => read_dir,
-                    Err(error) => return Err(format!("0 {error}")),
-                };
+        let mut content = vec![];
+
+        let drives = get_drive_letters();
+
+        for drive in drives {
+            let recycle_bin_path = format!("{}recycle_bin_cfe", drive);
             
-                for entry in read_dir {
-                    let entry = entry.unwrap();
-                    let metadata = entry.metadata().unwrap();
-
-                    let is_dir = metadata.is_dir();
-                    let name = entry.file_name().to_str().unwrap().to_string();
-                    let path = entry.path().to_str().unwrap().to_string();
-                    let size = format!("{} B", metadata.len());
-                    let last_modified_datetime: DateTime<Local> = metadata.modified().unwrap().into();
-                    let last_modified = last_modified_datetime.format("%d/%m/%Y %T").to_string();
-                    let created_datetime: DateTime<Local> = metadata.created().unwrap().into();
-                    let created = created_datetime.format("%d/%m/%Y %T").to_string();
-
-                    content.push(Entry {
-                        is_dir,
-                        name,
-                        path,
-                        size,
-                        last_modified,
-                        created
-                    });
-                }
+            if !Path::new(&recycle_bin_path).exists() {
+                continue;
             }
-    
-            return Ok(content);
+
+            let read_dir = match fs::read_dir(recycle_bin_path) {
+                Ok(read_dir) => read_dir,
+                Err(error) => return Err(format!("0 {error}")),
+            };
+        
+            for entry in read_dir {
+                let entry = entry.unwrap();
+                let metadata = entry.metadata().unwrap();
+
+                let is_dir = metadata.is_dir();
+                let name = entry.file_name().to_str().unwrap().to_string();
+                let path = entry.path().to_str().unwrap().to_string();
+                let size = format!("{} B", metadata.len());
+                let last_modified_datetime: DateTime<Local> = metadata.modified().unwrap().into();
+                let last_modified = last_modified_datetime.format("%d/%m/%Y %T").to_string();
+                let created_datetime: DateTime<Local> = metadata.created().unwrap().into();
+                let created = created_datetime.format("%d/%m/%Y %T").to_string();
+
+                content.push(Entry {
+                    is_dir,
+                    name,
+                    path,
+                    size,
+                    last_modified,
+                    created
+                });
+            }
         }
+
+        return Ok(content);
     }
+    
+    if path == "drives" {
+        let drive_letters = get_drive_letters();
+        let mut drive_entries = vec![];
+        for letter in drive_letters {
+            drive_entries.push(Entry { 
+                is_dir: true,
+                name: letter.clone(),
+                path: letter,
+                size: "".into(),
+                last_modified: "".into(),
+                created: "".into(),
+            });
+        }
+        return Ok(drive_entries);
+    }
+    
     let path_check = path.get(1..path.len()).unwrap();
     let is_drive = path_check == ":\\" || path_check == ":/";
 
