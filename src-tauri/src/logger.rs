@@ -1,4 +1,7 @@
+use std::fs;
+
 pub(crate) fn setup_logger() -> Result<(), fern::InitError> {
+    fs::create_dir_all("logs");
     fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(

@@ -171,7 +171,6 @@ fn create_system_tray() -> tauri::SystemTray {
     tauri::SystemTray::new().with_menu(tray_menu)
 }
 
-
 #[tauri::command]
 fn open_powershell(path: &str) -> Result<String, String>{
     let _ = Command::new("cmd")
